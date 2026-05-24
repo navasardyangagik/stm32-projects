@@ -1,6 +1,6 @@
 # Embedded Systems
 
-Working with the STM32F411RE (ARM Cortex-M4, 100MHz max, 512KB flash, 128KB SRAM) on the NUCLEO-F411RE development board. All projects are bare-metal. There's no RTOSS (real-time operating system), no HAL, no Arduino, no libraries. Direct register manipulation using the reference manual and datasheet.
+Working with the STM32F411RE (ARM Cortex-M4, 100MHz max, 512KB flash, 128KB SRAM) on the NUCLEO-F411RE development board. All projects are bare-metal. There's no RTOS (real-time operating system), no HAL, no Arduino, no libraries. Direct register manipulation using the reference manual and datasheet.
 
 ## Toolchain
 
