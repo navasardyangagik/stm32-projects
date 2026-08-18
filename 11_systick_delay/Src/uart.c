@@ -1,37 +1,72 @@
-#include <stdint.h>
-#include "stm32f4xx.h"
+#include "uart.h"
 
 #define GPIOAEN  		(1U<<0)
 #define UART2EN			(1U<<17)
 
 #define CR1_TE 			(1U<<3) // CONTROL register 1.
+#define CR1_RE 			(1U<<2) // enable RX through CR1.
 #define CR1_UE 			(1U<<13)
+
 #define SR_TXE 			(1U<<7) // to check if uart tx is empty
+#define SR_RXNE 		(1U<<5)
 
 #define SYS_FREQ 		16000000
 #define APB1_CLK 		SYS_FREQ
 
 #define UART_BAUDRATE 	115200
 
-
 static void uart_set_baudrate(USART_TypeDef *USARTx, uint32_t PeriphClk, uint32_t BaudRate);
 static uint16_t compute_uart_BD(uint32_t PeriphClk, uint32_t BaudRate);
 
-void uar2_tx_init(void);
+
 void uart2_write(int ch);
 
-
-int main(void)
+int __io_putchar(int ch)
 {
-	uar2_tx_init();
-
-	while(1)
-	{
-		uart2_write('y');
-	}
+	uart2_write(ch);
+	return ch;
 }
 
-void uar2_tx_init(void)
+void uart2_rxtx_init(void)
+{
+	// First configure uart gpio pin, it's an alternate function first of all.
+
+	// enable clock access to gpioA
+	RCC->AHB1ENR |= GPIOAEN;
+	// Set PA2 mode to alternate function mode
+	GPIOA->MODER |= (1U<<5);
+	GPIOA->MODER &=~(1U<<4);
+
+	// Set PA2 alternate function type to UART_TX. (AF07)
+	GPIOA->AFR[0] |= (1U<<8);
+	GPIOA->AFR[0] |= (1U<<9);
+	GPIOA->AFR[0] |= (1U<<10);
+	GPIOA->AFR[0] &=~(1U<<11);
+
+	// PA3 is the RX line of our USART2.
+	GPIOA->MODER &=~(1U<<6);
+	GPIOA->MODER |= (1U<<7);
+
+	// Make the Alternate function configured to be for AF7.
+	GPIOA->AFR[0] |= (1U<<12);
+	GPIOA->AFR[0] |= (1U<<13);
+	GPIOA->AFR[0] |= (1U<<14);
+	GPIOA->AFR[0] &=~(1U<<15);
+
+	// enable uart module
+	USART2->CR1 |= CR1_UE;
+}
+
+void uart2_write(int ch)
+{
+	// make sure the transmit data register is empty
+	while(!(USART2->SR & SR_TXE)){} // When does this return true? i have no idea.
+
+	// Write to transmit data register
+	USART2->DR = (ch & 0xFF);
+}
+
+void uart2_tx_init(void)
 {
 	// First configure uart gpio pin, it's an alternate function first of all.
 
@@ -56,21 +91,19 @@ void uar2_tx_init(void)
 	uart_set_baudrate(USART2, APB1_CLK, UART_BAUDRATE);
 
 	/* configure the transfer direction */
-	USART2->CR1 = CR1_TE; // Deliberately use = so we clear everything other than enable. Sets defaults + parity.
+	USART2->CR1 = (CR1_TE | CR1_RE); // Enables BOTH TX and RX.
 
 	/* enable the uart module. Bit 13 is UE. Uart enable*/
 	USART2->CR1 |= CR1_UE;
 }
 
-void uart2_write(int ch)
+char uart2_read(void)
 {
-	// make sure the transmit data register is empty
-	while(!(USART2->SR & SR_TXE)){} // When does this return true? i have no idea.
-
-	// Write to transmit data register
-	USART2->DR = (ch & 0xFF);
+	/*Make sure the receive data register is NOT empty.*/
+	while(!(USART2->SR & SR_RXNE)){}
+	// Reads data
+	return USART2->DR;
 }
-
 
 static void uart_set_baudrate(USART_TypeDef *USARTx, uint32_t PeriphClk, uint32_t BaudRate)
 {
