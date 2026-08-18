@@ -1,2 +1,11 @@
 # Ignore metadata
 .metadata
+
+# Build output
+Debug/
+*.elf
+*.o
+*.bin
+*.hex
+*.map
+*.list
