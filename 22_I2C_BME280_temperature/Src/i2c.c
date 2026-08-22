@@ -16,6 +16,9 @@ timings
 • 4 MHz in Fm mode
  */
 
+uint16_t dig_T1;   /* unsigned short */
+int16_t  dig_T2;   /* signed short   */
+int16_t  dig_T3;   /* signed short   */
 
 void I2C_Config(void)
 {
@@ -152,7 +155,7 @@ void I2C_Read_Buffer(uint8_t *data, uint8_t size)
 		{
 			/* if we are on the last one. we want to clear the ACK to NACK after the last byte is received */
 			I2C1->CR1 &=~(1U<<10);
-			I2C1->CR1 |= (1U<<9); // set the stop bit on
+			I2C_Stop();
 			while(!(I2C1->SR1 & (1U<<6))); // wait for Data register to fill the last time
 			*data++ = I2C1->DR;
 			break;
@@ -189,4 +192,53 @@ void I2C_WriteMulti (uint8_t *data, uint8_t size)
 
 	/* Once the data transfer is complete, wait for the BTF to be set indicating the end of the last transmission. */
 	while(!(I2C1->SR1 & (1U<<2)));
+}
+
+uint8_t BME_ReadReg(uint8_t reg)
+{
+	I2C_Start();
+	I2C_Address_Write(0x76);
+	I2C_Write(reg);
+	I2C_Start();
+	I2C_Address_Read(0x76);
+	return I2C_Read();
+}
+
+void BME_ReadBuf(uint8_t addr, uint8_t *data, uint8_t size)
+{
+	I2C_Start();
+	I2C_Address_Write(0x76);
+
+	/* write the next address that we will want information from */
+	I2C_Write(addr);
+
+	/* go back to read mode re start*/
+	I2C_Start();
+	I2C_Address_Read(0x76);
+
+	I2C_Read_Buffer(data, size);
+}
+
+void BME_WriteReg(uint8_t reg, uint8_t data)
+{
+	I2C_Start();
+	I2C_Address_Write(0x76);
+
+	I2C_Write(reg);
+	I2C_Write(data);
+
+	I2C_Stop();
+}
+
+int32_t t_fine;
+
+int32_t BME280_compensate_T_int32(int32_t adc_T)
+{
+      int32_t var1, var2, T;
+      var1 = ((((adc_T>>3) - ((int32_t)dig_T1<<1))) * ((int32_t)dig_T2)) >> 11;
+      var2 = (((((adc_T>>4) - ((int32_t)dig_T1)) * ((adc_T>>4) - ((int32_t)dig_T1))) >> 12)
+              * ((int32_t)dig_T3)) >> 14;
+      t_fine = var1 + var2;
+      T = (t_fine * 5 + 128) >> 8;
+      return T;
 }
