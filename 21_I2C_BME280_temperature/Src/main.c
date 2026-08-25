@@ -34,6 +34,6 @@ int main(void)
 
 		temp_final = BME280_compensate_T_int32((int32_t)adc_T);
 
-		printf("Temperature: %ld.%02ld deg C%\r\n", temp_final / 100, temp_final % 100);
+		printf("Temperature: %ld.%02ld deg C\r\n", temp_final / 100, temp_final % 100);
 	}
 }
