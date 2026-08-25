@@ -1,6 +1,7 @@
 #include "stm32f4xx.h"
 #include "tim.h"
 
+
 #define TIM2EN 		(1U<<0)
 #define CR1_CEN 	(1U<<0)
 #define OC_TOGGLE 	(1U<<4) | (1U<<5)
@@ -24,6 +25,7 @@ void tim2_1hz_init(void)
 
 void tim2_output_compare(void)
 {
+
 	/* enable clock access to GPIOA */
 	RCC->AHB1ENR |= GPIOAEN;
 	/* set PA5 mode to alternate function */
