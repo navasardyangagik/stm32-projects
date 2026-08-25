@@ -12,7 +12,7 @@
 void systickDelayMs(int delay)
 {
 	/* configure systick in our .h file the structure is called SysTick*/
-	SysTick->LOAD = SYSTICK_LOAD_VAL;
+	SysTick->LOAD = SYSTICK_LOAD_VAL - 1;
 
 	/* clear systick current value register */
 	SysTick->VAL = 0;
