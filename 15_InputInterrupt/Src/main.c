@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include "stm32f4xx.h"
-#include "tim.h"
 #include "exti.h"
 #include "uart.h"
 
